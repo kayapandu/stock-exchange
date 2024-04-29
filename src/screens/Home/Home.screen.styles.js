@@ -27,10 +27,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   listCard: {
-    backgroundColor: COLOR.white,
-    borderRadius: 8,
     padding: 8,
-    borderWidth: 1,
+    borderBottomWidth: 0.5,
+    borderBottomColor: COLOR.brightCyan,
   },
   listCardTitle: {
     fontSize: 16,

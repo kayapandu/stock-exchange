@@ -22,7 +22,7 @@ const Home = function() {
   console.log(cryptoList)
   
   useEffect(() => {
-    pingMarketData();
+    getCoinMarketList();
   }, []);
 
   const renderPortofolio = useMemo(() => (
@@ -37,20 +37,36 @@ const Home = function() {
     </Card>
   ), []);
 
+  const renderItem = useCallback(item => 
+    <List.Item
+      title={item.symbol}
+      description={item.ath_change_percentage}
+      titleStyle={styles.listCardTitle}
+      descriptionStyle={styles.listCardDesc}
+      right={() => <Text>{item.current_price}</Text>}
+      left={() => renderLeftIcon(item.image)}
+      onPress={() => {}}
+      style={styles.listCard}
+    />
+  , [])
+
+  const renderLeftIcon = useCallback(icon => <Image source={{ uri: icon}} width={30} height={30} />,[])
+
   const renderListAssets = useCallback(() => (
     <View style={{ padding: 10 }}>
-      <List.Item
-        title="Coin A"
-        description="Gain"
-        titleStyle={styles.listCardTitle}
-        descriptionStyle={styles.listCardDesc}
-        right={() => <Text>10</Text>}
-        left={() => <Text>Icon</Text>}
-        onPress={() => {}}
-        style={styles.listCard}
-      />
+      {renderItem(mockItem)}
+      {renderItem(mockItem)}
+      {renderItem(mockItem)}
     </View>
   ), []);
+
+  const mockItem = {
+    id: "bitcoin",
+    image: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png?1696501400",
+    symbol: "btc",
+    ath_change_percentage: -13.9324,
+    current_price: 6.3334,
+  };
 
   const renderListWatchlist = useCallback(() => (
     <View style={{ padding: 10 }}>

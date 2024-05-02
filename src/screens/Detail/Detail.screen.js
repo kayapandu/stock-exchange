@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Dimensions, View, Image, ScrollView } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Surface, Text, Button } from 'react-native-paper';
+import { Surface, Text, Button, PaperProvider, Portal, Modal, TextInput } from 'react-native-paper';
 import { CandlestickChart } from 'react-native-wagmi-charts';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -24,6 +23,7 @@ const Detail = function() {
   const [coinValue, setCoinValue] = useState('1');
   const [usdValue, setUsdValue] = useState('');
   const [loading, setLoading] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     setUsdValue(cryptoData?.market_data?.current_price?.usd.toString());
@@ -168,7 +168,7 @@ const Detail = function() {
       </Text>
       <Text variant='labelLarge'>{COIN_DESC}</Text>
     </View>
-  ), []);
+  ), [cryptoData]);
 
   const renderMarketStatistic = useMemo(() => (
     <View style={styles.sectionContainer}>
@@ -197,7 +197,7 @@ const Detail = function() {
         buttonColor={COLOR.green}
         textColor={COLOR.white}
         labelStyle={styles.buttonText}
-        onPress={() => {}}
+        onPress={() => setVisible(true)}
       >
         Buy
       </Button>
@@ -211,9 +211,86 @@ const Detail = function() {
         Sell
       </Button>
     </View>
-  ), [])
+  ), []);
+
+  const renderTradeModal = useMemo(() => (
+    <Portal>
+      <Modal
+        visible={visible}
+        onDismiss={() => setVisible(false)}
+        contentContainerStyle={styles.modalContainerStyle}
+      >
+        <View>
+          <Text style={{...styles.infoText, fontWeight: 'bold', alignSelf: 'center'}} variant='titleLarge'>
+            {`${cryptoData?.symbol?.toUpperCase()} / USD `}
+          </Text>
+          <View style={{
+            ...styles.infoWrapper,
+            justifyContent: 'space-between',
+            paddingVertical: 5,
+            }}>
+            <View style={{...styles.sectionContainer, borderBottomWidth: 1.5, width: '100%'}}>
+              <Text variant='titleMedium' style={styles.infoText}>
+                Your Balance: $ {cryptoData?.market_data?.current_price?.usd}
+              </Text>
+            </View>
+          </View>
+          <View style={{
+            ...styles.infoWrapper,
+            justifyContent: 'space-between',
+            paddingVertical: 5,
+            }}>
+            <View style={{...styles.sectionContainer, borderBottomWidth: 1.5, width: '100%'}}>
+              <Text variant='titleMedium' style={styles.infoText}>
+                1 {cryptoData?.symbol?.toUpperCase()} = $ {cryptoData?.market_data?.current_price?.usd}
+              </Text>
+            </View>
+          </View>
+          <View style={{
+            ...styles.infoWrapper,
+            justifyContent: 'space-between',
+            paddingVertical: 5,
+            }}>
+            <View style={{...styles.sectionContainer, borderBottomWidth: 1.5, width: '40%'}}>
+              <Text variant='titleMedium' style={styles.infoText}>USD</Text>
+            </View>
+            <TextInput style={styles.inputContainer} value={usdValue} />
+          </View>
+          <View style={{...styles.infoWrapper, justifyContent: 'space-between' }}>
+            <View style={{...styles.sectionContainer, borderBottomWidth: 1.5, width: '40%'}}>
+              <Text variant='titleMedium' style={styles.infoText}>
+                {`${cryptoData?.symbol?.toUpperCase()}`}
+              </Text>
+            </View>
+            <TextInput style={styles.inputContainer} value={coinValue}/>
+          </View>
+          <View style={styles.modalButtonContainer}>
+            <Button 
+              mode="elevated"
+              buttonColor={COLOR.green}
+              textColor={COLOR.white}
+              labelStyle={styles.buttonText}
+              onPress={() => setVisible(false)}
+            >
+              Buy
+            </Button>
+            <Button 
+              mode="elevated"
+              buttonColor={COLOR.gray}
+              textColor={COLOR.white}
+              labelStyle={styles.buttonText}
+              onPress={() => setVisible(false)}
+            >
+              Cancel
+            </Button>
+          </View>
+        </View>
+      </Modal>
+    </Portal>
+  ), [visible, setVisible, cryptoData]);
 
   return (
+    <PaperProvider>
     <View style={styles.container}>
       <ScrollView>
         <Surface style={styles.surfaceContainer} elevation={2}>
@@ -224,7 +301,9 @@ const Detail = function() {
         {renderCoinDescription}
       </ScrollView>
       {renderFooter}
+      {renderTradeModal}
     </View>
+    </PaperProvider>
   )
 };
 

@@ -10,7 +10,6 @@ import beachImage from 'assets/beach.png';
 
 import { getAssetListData, getWatchListData } from 'src/utils/storage';
 
-
 import { getCoinMarketList, getCoinById, getCoinMarketById } from '@redux/actions/crypto.action';
 
 import styles from './Home.screen.styles';
@@ -55,7 +54,6 @@ const Home = function() {
 
     const listAsset = currentAssetlist.length > 0 ? currentAssetlist : seedAssetlist;
     const list = listAsset.toString();
-    console.log('xxx list', list);
     
     await getCoinMarketById(list, false, dispatch);
   }, []);
@@ -65,9 +63,6 @@ const Home = function() {
     getWatchList();
     getAssetList();
   }, []);
-
-  console.log('xxx crypto list', cryptoList);
-  console.log('xxx watchList', watchListData);
 
   const renderValuePercentage = useCallback((percentage, isSmall = false) => {
     const isUp = percentage > 0;
@@ -168,7 +163,7 @@ const Home = function() {
           renderNoData
       }
     </ScrollView>
-  ), [cryptoList]);
+  ), [assetListData]);
 
   const renderListWatchlist = useCallback(() => (
     <ScrollView style={{ padding: 10 }}>
@@ -178,7 +173,7 @@ const Home = function() {
           renderNoData
       }
     </ScrollView>
-  ), []);
+  ), [watchListData]);
 
   const renderScene = SceneMap({
     assets: renderListAssets,

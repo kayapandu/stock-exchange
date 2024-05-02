@@ -97,7 +97,28 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 20,
     fontWeight: 'bold'
-  }
+  },
+  modalContainerStyle: {
+    alignSelf: 'center',
+    width: '90%',
+    backgroundColor: COLOR.softYellow,
+    padding: 25,
+    borderRadius: 10,
+  },
+  inputContainer: {
+    width: '50%',
+    borderWidth: 1,
+    borderRadius: 5,
+    backgroundColor: COLOR.white,
+    height: 40,
+  },
+  modalButtonContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+    padding: 10,
+  },
 });
 
 export default styles;

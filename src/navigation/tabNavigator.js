@@ -12,12 +12,12 @@ const Tab = createMaterialBottomTabNavigator();
 function TabNavigation() {
   return (
     <Tab.Navigator
-      initialRouteName="Home"
-      activeColor={COLOR.pink}
+      initialRouteName="HomeScreen"
+      activeColor={COLOR.black}
       barStyle={{ backgroundColor: COLOR.brightCyan }}
     >
       <Tab.Screen
-        name="Home"
+        name="HomeScreen"
         component={HomeScreen}
         options={{
           tabBarLabel: 'Home',

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {NavigationContainer} from '@react-navigation/native';
+import { NavigationContainer } from '@react-navigation/native';
 import { Appbar } from 'react-native-paper';
 
 import StackNavigation from './stack';

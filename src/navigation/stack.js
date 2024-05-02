@@ -4,23 +4,25 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import TabNavigation from './tabNavigator';
 
 import HomeScreen from '@screens/Home/Home.screen';
+import DetailScreen from '@screens/Detail/Detail.screen';
 
 const Stack = createNativeStackNavigator();
 
 const StackNavigation = function(){
   return (
     <Stack.Navigator
-      initialRouteName="TabNavigatorScreen"
-      screenOptions={{ headerShown: false }}
+      initialRouteName="Home"
+      screenOptions={{ headerShown: true }}
     >
       <Stack.Screen
-        name="TabNavigation"
+        name="Home"
         component={TabNavigation}
       />
       <Stack.Screen
-        name="Home"
-        component={HomeScreen}
+        name="Detail"
+        component={DetailScreen}
       />
+      
     </Stack.Navigator>
   )
 };

@@ -6,7 +6,11 @@ export const COLOR = {
   black: '#000000',
   gray: '#78909C',
   brightGreen: '#03DAC6',
+  lightGreen: '#B9F6CA',
+  lightRed: '#FF8A65',
   darkGreen: '#018686',
+  green: '#4CAF50',
+  brightRed: '#D84315',
   red: '#B00020',
   yellow: '#FFDE03',
   softYellow: '#fff2df',
@@ -14,3 +18,11 @@ export const COLOR = {
   brightCyan: '#4DD0E1',
   pink: '#EC407A',
 };
+
+export const FILTER_DAYS = [
+  { filterDay: '1', filterText: '24h' },
+  { filterDay: '7', filterText: '7d' },
+  { filterDay: '30', filterText: '30d' },
+  { filterDay: '365', filterText: '1y' },
+  { filterDay: 'max', filterText: 'All' },
+];

@@ -17,7 +17,8 @@ const client = new ApiService({ baseURL: BASE_URL });
 const marketDataService = {};
 
 marketDataService.pingMarket = () => client.get(`/ping`, {params: keyParams});
-marketDataService.getCoinById = (coinId) => client.get(`/coins/01coin`);
+marketDataService.getCoinById = (coinId) => client.get(`/coins/${coinId}`, { params: keyParams});
+marketDataService.getCoinChart = (coinId, queryParams) => client.get(`/coins/${coinId}/ohlc`, { params: {...keyParams, ...queryParams}});
 marketDataService.getCoinList = () => client.get(`/coins/list`, {params: {...keyParams}});
 marketDataService.getCoinMarketList = queryParams => client.get(`/coins/markets`, { params: {...queryParams, ...keyParams}});
 

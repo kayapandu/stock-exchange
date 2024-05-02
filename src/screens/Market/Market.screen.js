@@ -5,18 +5,18 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-import { getCoinMarketList } from '@redux/actions/crypto.action';
+import { getCoinMarketList, getCoinById } from '@redux/actions/crypto.action';
 
 import styles from './Market.screen.styles';
 
 const Market = function() {
   const dispatch = useDispatch();
   const cryptoList = useSelector(state => state.cryptoList);
-  const { navigate } = useNavigation();
+  const { navigate, isFocused } = useNavigation();
 
   useEffect(() => {
     getCoinMarketList(dispatch);
-  }, []);
+  }, [isFocused]);
 
   const handleOnDetail = useCallback(item => {
     getCoinById(item.id, dispatch);

@@ -18,7 +18,7 @@ import { COLOR } from '@constants/constants';
 const Home = function() {
   const layout = useWindowDimensions();
   const dispatch = useDispatch();
-  const { navigate } = useNavigation();
+  const { navigate, isFocused } = useNavigation();
 
   const cryptoList = useSelector(state => state.cryptoList);
   const watchListData = useSelector(state => state.watchList);
@@ -62,7 +62,7 @@ const Home = function() {
     getCoinMarketList(dispatch);
     getWatchList();
     getAssetList();
-  }, []);
+  }, [isFocused]);
 
   const renderValuePercentage = useCallback((percentage, isSmall = false) => {
     const isUp = percentage > 0;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Animated, View, useWindowDimensions, TouchableOpacity, Image, ScrollView , ImageBackground} from 'react-native';
+import { Animated, View, useWindowDimensions, TouchableOpacity, Image, ScrollView, RefreshControl} from 'react-native';
 import { Card, Text, List, Surface } from 'react-native-paper';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,9 +8,21 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 
 import beachImage from 'assets/beach.png';
 
-import { getAssetListData, getWatchListData } from 'src/utils/storage';
+import { 
+  getAssetListData,
+  getWatchListData,
+  removeAssetlistCoinId,
+  setDefaultBalance,
+  getDefaultBalance,
+} from 'src/utils/storage';
 
-import { getCoinMarketList, getCoinById, getCoinMarketById } from '@redux/actions/crypto.action';
+import { countPercentage, countTotalBalance } from 'src/utils/assets';
+
+import { 
+  getCoinById,
+  getCoinMarketById,
+  setAssetBalance,
+} from '@redux/actions/crypto.action';
 
 import styles from './Home.screen.styles';
 import { COLOR } from '@constants/constants';
@@ -22,18 +34,19 @@ const Home = function() {
 
   const cryptoList = useSelector(state => state.cryptoList);
   const watchListData = useSelector(state => state.watchList);
-  const assetListData = useSelector(state => state.assetsList);
+  const assetListData = useSelector(state => state.assetList);
+  const assetBalance = useSelector(state => state.usdBalance);
 
   const [index, setIndex] = useState(0);
   const [routes] = useState([
     { key: 'assets', title: 'Assets' },
     { key: 'watchlist', title: 'Watchlist' },
   ]);
-  const [watchList, setWatchList] = useState([]);
   const [assetList, setAssetList] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleOnDetail = useCallback(item => {
-    getCoinById(item.id, dispatch);
+  const handleOnDetail = useCallback(async item => {
+    await getCoinById(item.id, dispatch);
     navigate('Detail');
   }, []);
 
@@ -43,29 +56,42 @@ const Home = function() {
 
     const listWatch = currentWatchlist.length > 0 ? currentWatchlist : seedWatchlist;
     const list = listWatch.toString();
-    console.log('xxx list', list);
     
     await getCoinMarketById(list, true, dispatch);
   }, []);
 
   const getAssetList = useCallback(async () => {
     const currentAssetlist = await getAssetListData();
-    const seedAssetlist = ['bitcoin', 'tether'];
+    const idAssetList = [];
 
-    const listAsset = currentAssetlist.length > 0 ? currentAssetlist : seedAssetlist;
-    const list = listAsset.toString();
-    
-    await getCoinMarketById(list, false, dispatch);
+    if (currentAssetlist.length === 0) { 
+      setAssetBalance(1000, dispatch);
+      setDefaultBalance(1000);
+    } else {
+      currentAssetlist.forEach(item => idAssetList.push(item.id));
+      setAssetList(currentAssetlist);
+      const list = idAssetList.toString();
+
+      await getCoinMarketById(list, false, dispatch);
+    };
+
   }, []);
 
   useEffect(() => {
-    getCoinMarketList(dispatch);
-    getWatchList();
     getAssetList();
+    getWatchList();
+
   }, [isFocused]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await getAssetList();
+    await getWatchList();
+    setRefreshing(false);
+  }, []);
+
   const renderValuePercentage = useCallback((percentage, isSmall = false) => {
-    const isUp = percentage > 0;
+    const isUp = parseFloat(percentage) > 0;
     return (
       <Surface
         style={isUp ? 
@@ -88,17 +114,19 @@ const Home = function() {
   }
   ,[]);
 
+  const TOTAL_ASSETS = useMemo(() => countTotalBalance(assetList, assetListData), [assetList, assetListData]);
+
   const renderBalanceProfit = useMemo(() =>
     <View style={{ flex: 1, flexDirection: 'column'}}>
       <Text style={{ fontWeight: '600'}} variant='titleMedium'>Your Assets</Text>
       <View style={{ ...styles.balanceContainer,  ...styles.balanceTextContainer}}>
         <Text style={{ fontWeight: 'bold'}} variant='displaySmall'>
-          100.00
+          {TOTAL_ASSETS.balanceNow || 0}
         </Text>
         <Text style={{ marginLeft: 4 }} variant='titleMedium'>USD</Text>
       </View>
     </View>
-  ,[]);
+  , [assetBalance, isFocused, TOTAL_ASSETS]);
 
   const renderPortofolio = useMemo(() => (
     <Card style={styles.cardContainer}>
@@ -109,24 +137,25 @@ const Home = function() {
           <Image source={beachImage} style={{ width: 130, height: 130}} />
         </View>
         <View style={{ width: '30%' }}>
-          {renderValuePercentage(20)}
+          {renderValuePercentage(TOTAL_ASSETS.percentage || 0)}
         </View>
       </Card.Content>
     </Card>
-  ),[]);
+  ), [renderBalanceProfit, isFocused, TOTAL_ASSETS]);
 
   const renderLeftIcon = useCallback(icon => <Image source={{ uri: icon}} style={{ alignSelf: 'center' }} width={30} height={30} />,[])
 
   const renderRightIcon = useCallback((currentPrice, percentage) => (
     <View style={{ display: 'flex', alignItems: 'flex-end' }}>
       <Text variant='titleSmall' style={{ fontWeight: '800' }}>$ {currentPrice}</Text>
-      {renderValuePercentage(percentage.toFixed(2), true)}
+      {renderValuePercentage(percentage?.toFixed(2), true)}
     </View>
   ), []);
 
-  const renderItem = useCallback(item => 
+  const renderItem = useCallback(item =>
     <List.Item
       id={`item_${item?.symbol}`}
+      key={`key_${item?.symbol}`}
       title={item?.symbol.toUpperCase()}
       description={item?.name.toUpperCase()}
       titleStyle={styles.listCardTitle}
@@ -153,20 +182,36 @@ const Home = function() {
       />
       <Text style={{ marginLeft: 5, fontWeight: '800' }} variant='labelMedium'>Oops, there's no lists yet</Text>
     </View>
-  ))
+  ));
 
   const renderListAssets = useCallback(() => (
-    <ScrollView style={{ padding: 10 }}>
+    <ScrollView 
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      style={{ padding: 10 }}>
       {
         assetListData.length > 0 ?
-          assetListData?.map(item => renderItem(item)) :
+          assetListData?.map(item => {
+            const currAsset = assetList.find(val => val.id === item.id);
+            const countDiff = countPercentage(currAsset.transaction, item.current_price);
+
+            const newItem = {
+              ...item,
+              current_price: parseFloat(countDiff.totalNow).toFixed(4),
+              price_change_percentage_24h: parseFloat(countDiff.percentage),
+            };
+
+            return renderItem(newItem)
+          }) :
           renderNoData
       }
     </ScrollView>
-  ), [assetListData]);
+  ), [assetListData, assetList]);
 
   const renderListWatchlist = useCallback(() => (
-    <ScrollView style={{ padding: 10 }}>
+    <ScrollView
+      style={{ padding: 10 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       {
         watchListData.length > 0 ?
           watchListData?.map(item => renderItem(item)) :
@@ -218,10 +263,12 @@ const Home = function() {
       onIndexChange={setIndex}
       initialLayout={{ width: layout.width }}
     />
-  ), [index, routes, cryptoList]);
+  ), [index, routes, cryptoList, assetList, assetListData]);
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+    >
       {renderPortofolio}
       {renderAssetsTab}
     </View>

@@ -3,14 +3,16 @@ import {
   GET_CURRENT_CRYPTO,
   GET_ASSET_LIST,
   GET_WATCH_LIST,
+  SET_USD_BALANCE,
 } from '../types';
 
 const initialState = {
   cryptoList: [],
-  assetsList: [],
+  assetList: [],
   watchList: [],
   loading: false,
   currentCrypto: {},
+  usdBalance: 0,
 };
 
 export default (state = initialState, action = { type: 'default' }) => {
@@ -31,13 +33,18 @@ export default (state = initialState, action = { type: 'default' }) => {
       return {
         ...state,
         loading: action.payload.loading,
-        assetsList: action.payload,
+        assetList: action.payload,
       }
     case GET_WATCH_LIST :
       return {
         ...state,
         loading: action.payload.loading,
         watchList: action.payload,
+      }
+    case SET_USD_BALANCE :
+      return {
+        ...state,
+        usdBalance: action.payload,
       }
     default:
       return state;

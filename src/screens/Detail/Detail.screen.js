@@ -1,14 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Dimensions, View, Image, ScrollView } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { Surface, Text, Button, PaperProvider, Portal, Modal, TextInput } from 'react-native-paper';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Dimensions, View, Image, ScrollView, RefreshControl } from 'react-native';
+import { useSelector } from 'react-redux';
+import { ActivityIndicator, Surface, Text, Button, PaperProvider, Portal, Modal, TextInput } from 'react-native-paper';
 import { CandlestickChart } from 'react-native-wagmi-charts';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native';
 
 import { FILTER_DAYS } from '@constants/constants';
 import FilterComponent from '@components/Filter/Filter.component';
 import { getCoinChartOHLC } from '@redux/actions/crypto.action';
 import { COLOR } from "@constants/constants";
+import { getAssetListData, setAssetListData } from "src/utils/storage";
+import { countCoinBalance } from "src/utils/assets";
 
 export const {width: SIZE} = Dimensions.get('window');
 
@@ -16,33 +19,51 @@ import styles from "./Detail.screen.styles";
 
 
 const Detail = function() {
+  const { goBack } = useNavigation();
+
   const cryptoData = useSelector(state => state.currentCrypto);
 
   const [selectedRange, setSelectedRange] = useState('1');
   const [coinMarketData, setCoinMarketData] = useState([]);
-  const [coinValue, setCoinValue] = useState('1');
-  const [usdValue, setUsdValue] = useState('');
+  const [coinValue, setCoinValue] = useState('0');
+  const [usdValue, setUsdValue] = useState('1');
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [assetList, setAssetList] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const { market_data } = cryptoData;
 
   useEffect(() => {
-    setUsdValue(cryptoData?.market_data?.current_price?.usd.toString());
+    setCoinValue(market_data?.current_price?.usd.toString());
+    setUsdValue('1');
     fetchCoinMarket(selectedRange);
   }, [cryptoData]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchCoinMarket(selectedRange);
+    setRefreshing(false);
+  }, []);
+
+
   const fetchCoinMarket = async (range) => {
     setLoading(true);
-    const coinId = cryptoData?.id;
-    const fetchedCoinMarketData = await getCoinChartOHLC(
-      coinId,
-      range,
-    );
+    if (cryptoData) {
+      const coinId = cryptoData?.id;
+      const fetchedCoinMarketData = await getCoinChartOHLC(
+        coinId,
+        range,
+      );
+  
+      const assetListData = await getAssetListData();
+  
+      setAssetList(assetListData);
+      setCoinMarketData(fetchedCoinMarketData);
+    }
 
-    setCoinMarketData(fetchedCoinMarketData);
     setLoading(false);
   };
-
-  console.log('xxx crypto', cryptoData);
 
   const onSelectedRangeChange = value => {
     setSelectedRange(value)
@@ -52,14 +73,56 @@ const Detail = function() {
   const changeCoinValue = value => {
     setCoinValue(value);
     const floatValue = parseFloat(value) || 0;
-    setUsdValue((floatValue * current_price.usd).toFixed(6).toString());
+    setUsdValue((floatValue * market_data?.current_price?.usd).toFixed(6).toString());
   };
 
   const changeUsdValue = value => {
     setUsdValue(value);
-    const floatValue = parseFloat(value.replace(',', '.')) || 0;
-    setCoinValue((floatValue / current_price.usd).toFixed(6).toString());
+    const floatValue = parseFloat(value) || 0;
+    setCoinValue((floatValue / market_data?.current_price?.usd).toFixed(6).toString());
   };
+
+  const onBuyCoin = useCallback(async () => {
+    const coinAssetsIdx = assetList?.findIndex(item => item.id === cryptoData?.id );
+
+    let coinTrade = [...assetList];
+    if (coinAssetsIdx >= 0) {
+      let newTransaction = [...coinTrade[coinAssetsIdx].transaction];
+
+      newTransaction.push({
+        usd: usdValue,
+        coin: coinValue,
+        price: market_data?.current_price?.usd,
+        type: 'buy',
+      });
+
+      coinTrade[coinAssetsIdx].transaction = newTransaction;
+    } else {
+      coinTrade = [
+        ...assetList,
+      {
+        id: cryptoData?.id,
+        transaction: [
+          {
+            usd: usdValue,
+            coin: coinValue,
+            price: market_data?.current_price?.usd,
+            type: 'buy',
+          }
+        ]
+      }];
+    };
+
+    try {
+      await setAssetListData(coinTrade);
+    } catch (error) {
+      console.log(error)
+    } finally {
+      fetchCoinMarket();
+      setVisible(false);
+      goBack();
+    };
+  })
 
   const COIN_PRICES = useMemo(() => {
     const data = coinMarketData?.map(price => ({ 
@@ -72,6 +135,30 @@ const Detail = function() {
 
     return data;
   }, [coinMarketData, fetchCoinMarket, setCoinMarketData]);
+
+  const COIN_ASSETS = useMemo(() => {
+    if (cryptoData) {
+      const coinAssets = assetList?.find(item => item.id === cryptoData?.id );
+      if (coinAssets !== undefined && coinAssets !== null) {
+        const coinConvert = countCoinBalance(coinAssets.transaction, market_data?.current_price?.usd);
+
+        return {
+          coin: coinConvert.totalCoin,
+          balance: coinConvert.totalBalance.toFixed(2),
+        };
+      } else {
+        return {
+          coin: 0,
+          balance: 0,
+        }
+      }
+    };
+
+    return {
+      coin: 0,
+      balance: 0,
+    }    
+  }, [assetList, cryptoData]);
 
   const COIN_DESC = useMemo(() => {
     const description = cryptoData?.description?.en?.split("\n");
@@ -93,6 +180,12 @@ const Detail = function() {
     )
   }       
   ,[cryptoData]);
+  
+  const renderLoading = useMemo(() => (
+    <Portal>
+      <ActivityIndicator style={{ top: 160}} animating={true} size='large' color={COLOR.black } />
+    </Portal>
+  ), [loading])
 
   const renderCoinInfo = useMemo(() => (
     <View style={styles.coinInfoContainer}>
@@ -149,17 +242,17 @@ const Detail = function() {
           style={{ fontWeight: '800', alignSelf: 'flex-end' }}
           variant='titleLarge'
         >
-          {`${cryptoData?.symbol?.toUpperCase()} 12`}
+          {`${cryptoData?.symbol?.toUpperCase()} ${COIN_ASSETS?.coin}`}
         </Text>
         <Text
           style={{ fontWeight: '400', alignSelf: 'flex-end' }}
           variant='titleSmall'
         >
-          $ 120
+          {`$ ${COIN_ASSETS?.balance}`}
         </Text>
       </View>
     </View>
-  ), [cryptoData]);
+  ), [cryptoData, COIN_ASSETS]);
 
   const renderCoinAbout = useMemo(() => (
     <View style={styles.sectionContainer}>
@@ -188,7 +281,7 @@ const Detail = function() {
       {renderCoinAbout}
       {renderMarketStatistic}
     </View>
-  ), [cryptoData, renderCoinAbout, renderMarketStatistic]);
+  ), [cryptoData, renderCoinAbout, renderMarketStatistic,]);
 
   const renderFooter = useMemo(() => (
     <View style={styles.footerContainer}>
@@ -213,6 +306,60 @@ const Detail = function() {
     </View>
   ), []);
 
+  const renderModalTradeSection = useMemo(() => (
+    <>
+      <View style={{
+        ...styles.infoWrapper,
+        justifyContent: 'space-between',
+        paddingVertical: 5,
+        }}>
+        <View style={{...styles.sectionContainer, borderBottomWidth: 1.5, width: '40%'}}>
+          <Text variant='titleMedium' style={styles.infoText}>USD</Text>
+        </View>
+        <TextInput
+          value={usdValue}
+          style={styles.inputContainer}
+          onChangeText={changeUsdValue}
+        />
+      </View>
+      <View style={{...styles.infoWrapper, justifyContent: 'space-between' }}>
+        <View style={{...styles.sectionContainer, borderBottomWidth: 1.5, width: '40%'}}>
+          <Text variant='titleMedium' style={styles.infoText}>
+            {`${cryptoData?.symbol?.toUpperCase()}`}
+          </Text>
+        </View>
+        <TextInput
+          value={coinValue}
+          style={styles.inputContainer}
+          onChangeText={changeCoinValue}
+        />
+      </View>
+    </>
+  ), [usdValue, coinValue, changeCoinValue, changeUsdValue])
+
+  const renderModalButton = useMemo(() => (
+    <View style={styles.modalButtonContainer}>
+      <Button 
+        mode="elevated"
+        buttonColor={COLOR.green}
+        textColor={COLOR.white}
+        labelStyle={styles.buttonText}
+        onPress={onBuyCoin}
+      >
+        Buy
+      </Button>
+      <Button 
+        mode="elevated"
+        buttonColor={COLOR.gray}
+        textColor={COLOR.white}
+        labelStyle={styles.buttonText}
+        onPress={() => setVisible(false)}
+      >
+        Cancel
+      </Button>
+    </View>
+  ), [setVisible, onBuyCoin]);
+
   const renderTradeModal = useMemo(() => (
     <Portal>
       <Modal
@@ -231,7 +378,7 @@ const Detail = function() {
             }}>
             <View style={{...styles.sectionContainer, borderBottomWidth: 1.5, width: '100%'}}>
               <Text variant='titleMedium' style={styles.infoText}>
-                Your Balance: $ {cryptoData?.market_data?.current_price?.usd}
+                Your Balance: $ {market_data?.current_price?.usd}
               </Text>
             </View>
           </View>
@@ -242,57 +389,39 @@ const Detail = function() {
             }}>
             <View style={{...styles.sectionContainer, borderBottomWidth: 1.5, width: '100%'}}>
               <Text variant='titleMedium' style={styles.infoText}>
-                1 {cryptoData?.symbol?.toUpperCase()} = $ {cryptoData?.market_data?.current_price?.usd}
+                1 {cryptoData?.symbol?.toUpperCase()} = $ {market_data?.current_price?.usd}
               </Text>
             </View>
           </View>
-          <View style={{
-            ...styles.infoWrapper,
-            justifyContent: 'space-between',
-            paddingVertical: 5,
-            }}>
-            <View style={{...styles.sectionContainer, borderBottomWidth: 1.5, width: '40%'}}>
-              <Text variant='titleMedium' style={styles.infoText}>USD</Text>
-            </View>
-            <TextInput style={styles.inputContainer} value={usdValue} />
-          </View>
-          <View style={{...styles.infoWrapper, justifyContent: 'space-between' }}>
-            <View style={{...styles.sectionContainer, borderBottomWidth: 1.5, width: '40%'}}>
-              <Text variant='titleMedium' style={styles.infoText}>
-                {`${cryptoData?.symbol?.toUpperCase()}`}
-              </Text>
-            </View>
-            <TextInput style={styles.inputContainer} value={coinValue}/>
-          </View>
-          <View style={styles.modalButtonContainer}>
-            <Button 
-              mode="elevated"
-              buttonColor={COLOR.green}
-              textColor={COLOR.white}
-              labelStyle={styles.buttonText}
-              onPress={() => setVisible(false)}
-            >
-              Buy
-            </Button>
-            <Button 
-              mode="elevated"
-              buttonColor={COLOR.gray}
-              textColor={COLOR.white}
-              labelStyle={styles.buttonText}
-              onPress={() => setVisible(false)}
-            >
-              Cancel
-            </Button>
-          </View>
+          {renderModalTradeSection}
+          {renderModalButton}
         </View>
       </Modal>
     </Portal>
-  ), [visible, setVisible, cryptoData]);
+  ), [visible, setVisible, cryptoData, renderModalTradeSection]);
+
+  const renderNoData = useMemo(() => (
+    <View 
+      style={{ 
+      display: 'flex',
+      flexDirection: 'row',
+      alignSelf: 'center',
+      alignItems: 'center',
+      }}>
+      <MaterialCommunityIcons 
+        name='book-cancel'
+        color='black'
+        size={20}
+      />
+      <Text style={{ marginLeft: 5, fontWeight: '800' }} variant='labelMedium'>Oops, there's no lists yet</Text>
+    </View>
+  ), []);
+
+  if (!cryptoData) { return renderNoData}
 
   return (
     <PaperProvider>
-    <View style={styles.container}>
-      <ScrollView>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} style={styles.container}/>}>
         <Surface style={styles.surfaceContainer} elevation={2}>
           {renderCoinInfo}
           {renderCandleChart}
@@ -302,7 +431,7 @@ const Detail = function() {
       </ScrollView>
       {renderFooter}
       {renderTradeModal}
-    </View>
+      {loading && renderLoading}
     </PaperProvider>
   )
 };

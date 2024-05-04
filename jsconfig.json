@@ -8,6 +8,8 @@
       "@navigation": ["./src/navigation"],
       "@redux/*": ["./src/redux/*"],
       "@screens": ["./src/screens"],
+      "@services": ["./src/services"],
+      "@utils": ["./src/utils"],
     },
     "jsx": "react-jsx"
   }

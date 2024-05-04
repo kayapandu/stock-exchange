@@ -12,7 +12,7 @@ const StackNavigation = function(){
   return (
     <Stack.Navigator
       initialRouteName="Home"
-      screenOptions={{ headerShown: true }}
+      screenOptions={{ headerShown: false }}
     >
       <Stack.Screen
         name="Home"

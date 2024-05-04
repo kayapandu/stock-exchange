@@ -1,12 +1,15 @@
 import { 
-  PING_CRYPTO_LIST,
   GET_CRYPTO_LIST,
   GET_CURRENT_CRYPTO,
   GET_ASSET_LIST,
   GET_WATCH_LIST,
+  SET_USD_BALANCE,
 } from "@redux/types";
 import marketDataService from '../../services/marketData';
 
+function isObject(value) {
+  return value !== null && typeof value === 'object';
+}
 
 export const pingMarketData = () => {
   marketDataService.pingMarket()
@@ -14,12 +17,19 @@ export const pingMarketData = () => {
     .catch(err => console.log(err));
 };
 
+export const setAssetBalance = (balance, dispatch) => {
+  dispatch({
+    type: SET_USD_BALANCE,
+    payload: balance,
+  });
+};
+
 export const getCoinById = async (coinId, dispatch) => {
   let data;
 
   marketDataService.getCoinById(coinId)
     .then(res => {
-      if (res) {
+      if (res && isObject(res)) {
         data = res;
       } else {
         data = {};
@@ -78,7 +88,6 @@ export const getCoinMarketById = async (list, isWatchlist, dispatch) => {
   marketDataService.getCoinMarketList(params)
     .then(res => {
       if (res.length > 0) {
-        console.log('xxxhre');
         data = res;
       } else {
         data = [];

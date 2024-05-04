@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "stock-exchange",
-    "slug": "stock-exchange",
+    "slug": "crypto-exchange",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -25,6 +25,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d9e09374-06b8-432f-a380-8f5826e37d1c"
+      }
+    },
+    "owner": "kayapandu"
   }
 }

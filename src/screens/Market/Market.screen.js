@@ -1,5 +1,5 @@
-import React , { useEffect, useMemo, useCallback } from 'react';
-import { View, Image, ScrollView } from 'react-native';
+import React , { useEffect, useMemo, useCallback, useState } from 'react';
+import { View, Image, ScrollView, RefreshControl } from 'react-native';
 import { Text, List, Surface } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
@@ -14,6 +14,8 @@ const Market = function() {
   const cryptoList = useSelector(state => state.cryptoList);
   const { navigate, isFocused } = useNavigation();
 
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
     getCoinMarketList(dispatch);
   }, [isFocused]);
@@ -21,6 +23,12 @@ const Market = function() {
   const handleOnDetail = useCallback(item => {
     getCoinById(item.id, dispatch);
     navigate('Detail');
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await getCoinMarketList(dispatch);
+    setRefreshing(false);
   }, []);
 
   const renderValuePercentage = useCallback((percentage) => {
@@ -59,6 +67,7 @@ const Market = function() {
   const renderItem = useCallback(item => 
     <List.Item
       id={`item_${item?.symbol}`}
+      key={`key_${item?.symbol}`}
       title={item?.symbol.toUpperCase()}
       description={item?.name.toUpperCase()}
       titleStyle={styles.listCardTitle}
@@ -85,10 +94,13 @@ const Market = function() {
       />
       <Text style={{ marginLeft: 5, fontWeight: '800' }} variant='labelMedium'>Oops, there's no lists yet</Text>
     </View>
-  ))
+  ), []);
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      style={styles.container}
+    >
       {
         cryptoList.length > 0 ?
           cryptoList?.map(item => renderItem(item)) :

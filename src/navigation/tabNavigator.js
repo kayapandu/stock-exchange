@@ -3,7 +3,6 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 
 import HomeScreen from '@screens/Home/Home.screen';
 import MarketScreen from '@screens/Market/Market.screen';
-import HistoryScreen from '@screens/History/History.screen';
 
 import { COLOR } from '@constants/constants';
 
@@ -33,16 +32,6 @@ function TabNavigation() {
           tabBarLabel: 'Market',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="chart-bar" color={color} size={28} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="History"
-        component={HistoryScreen}
-        options={{
-          tabBarLabel: 'Updates',
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="bell" color={color} size={28} />
           ),
         }}
       />

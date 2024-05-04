@@ -198,8 +198,8 @@ const Detail = function() {
       >
         <Image source={{ uri: cryptoData?.image?.thumb}} style={{ width: 30, height: 30, marginRight: 10 }} />
         <View style={styles.coinPriceContainer}>
-          <Text style={{ fontWeight: '400' }} variant="titleMedium">{cryptoData?.name}</Text>
-          <Text style={{ fontWeight: 'bold' }} variant="titleLarge">$ {cryptoData?.market_data?.current_price?.usd.toFixed(2)}</Text>
+          <Text style={{ fontWeight: '400', color: COLOR.black }} variant='titleMedium'>{cryptoData?.name}</Text>
+          <Text style={{ fontWeight: 'bold' }} variant='titleLarge'>$ {cryptoData?.market_data?.current_price?.usd.toFixed(2)}</Text>
         </View>
       </View>
 
@@ -420,7 +420,7 @@ const Detail = function() {
   if (!cryptoData) { return renderNoData}
 
   return (
-    <PaperProvider>
+    <PaperProvider theme={{ colors: { primary: COLOR.black }}}>
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} style={styles.container}/>}>
         <Surface style={styles.surfaceContainer} elevation={2}>
           {renderCoinInfo}

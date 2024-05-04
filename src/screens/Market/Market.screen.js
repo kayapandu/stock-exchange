@@ -55,7 +55,7 @@ const Market = function() {
   }
   ,[]);
 
-  const renderLeftIcon = useCallback(icon => <Image source={{ uri: icon}} style={{ alignSelf: 'center' }} width={30} height={30} />,[])
+  const renderLeftIcon = useCallback(icon => <Image source={{ uri: icon}} style={{ alignSelf: 'center', width: 30, height: 30 }} />,[])
 
   const renderRightIcon = useCallback((currentPrice, percentage) => (
     <View style={{ display: 'flex', alignItems: 'flex-end' }}>

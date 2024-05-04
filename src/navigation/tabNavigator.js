@@ -19,6 +19,7 @@ function TabNavigation() {
         name="HomeScreen"
         component={HomeScreen}
         options={{
+          title:'Home',
           tabBarLabel: 'Home',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="home" color={color} size={28} />
@@ -29,6 +30,7 @@ function TabNavigation() {
         name="Market"
         component={MarketScreen}
         options={{
+          title: 'Market',
           tabBarLabel: 'Market',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="chart-bar" color={color} size={28} />

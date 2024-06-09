@@ -11,9 +11,7 @@ import beachImage from 'assets/beach.png';
 import { 
   getAssetListData,
   getWatchListData,
-  removeAssetlistCoinId,
   setDefaultBalance,
-  getDefaultBalance,
 } from 'src/utils/storage';
 
 import { countPercentage, countTotalBalance } from 'src/utils/assets';

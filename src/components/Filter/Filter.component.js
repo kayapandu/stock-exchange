@@ -1,5 +1,5 @@
 import React, {memo} from 'react';
-import {StyleSheet, Text, Pressable} from 'react-native';
+import { Text, Pressable} from 'react-native';
 
 import { COLOR } from '@constants/constants';
 

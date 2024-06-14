@@ -104,11 +104,11 @@ export const getCoinMarketById = async (list, isWatchlist, dispatch) => {
     return data;
 };
 
-export const getCoinMarketList = async dispatch => {
+export const getCoinMarketList = async ({ page }, dispatch) => {
   const params = {
     vs_currency: 'usd',
     per_page: 10,
-    page: 1,
+    page,
   };
 
   let data;

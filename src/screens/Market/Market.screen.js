@@ -1,5 +1,5 @@
 import React , { useEffect, useMemo, useCallback, useState } from 'react';
-import { View, Image, ScrollView, RefreshControl } from 'react-native';
+import { View, Image, SafeAreaView, RefreshControl, FlatList } from 'react-native';
 import { Text, List, Surface } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +15,7 @@ const Market = function() {
   const { navigate, isFocused } = useNavigation();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     getCoinMarketList(dispatch);
@@ -27,9 +28,14 @@ const Market = function() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await getCoinMarketList(dispatch);
+    await getCoinMarketList({page}, dispatch);
     setRefreshing(false);
-  }, []);
+  }, [page]);
+
+  const getCryptoList = useCallback(async () => {
+    setPage(page + 1);
+    onRefresh();
+  }, [page]);
 
   const renderValuePercentage = useCallback((percentage) => {
     const isUp = percentage > 0;
@@ -60,16 +66,18 @@ const Market = function() {
   const renderRightIcon = useCallback((currentPrice, percentage) => (
     <View style={{ display: 'flex', alignItems: 'flex-end' }}>
       <Text variant='titleSmall' style={{ fontWeight: '800' }}>$ {currentPrice}</Text>
-      {renderValuePercentage(percentage.toFixed(2), true)}
+      {renderValuePercentage(percentage?.toFixed(2), true)}
     </View>
   ), []);
 
-  const renderItem = useCallback(item => 
+  const renderItem = useCallback(({item}) => {
+    console.log(item);
+  return (
     <List.Item
       id={`item_${item?.symbol}`}
       key={`key_${item?.symbol}`}
-      title={item?.symbol.toUpperCase()}
-      description={item?.name.toUpperCase()}
+      title={item?.symbol?.toUpperCase()}
+      description={item?.name?.toUpperCase()}
       titleStyle={styles.listCardTitle}
       descriptionStyle={styles.listCardDesc}
       right={() => renderRightIcon(item?.current_price, item?.price_change_percentage_24h)}
@@ -77,7 +85,7 @@ const Market = function() {
       onPress={() => handleOnDetail(item)}
       style={styles.listCard}
     />
-  , []);
+  )}, []);
 
   const renderNoData = useMemo(() => (
     <View 
@@ -86,6 +94,7 @@ const Market = function() {
       flexDirection: 'row',
       alignSelf: 'center',
       alignItems: 'center',
+      top: 150,
       }}>
       <MaterialCommunityIcons 
         name='book-cancel'
@@ -96,17 +105,27 @@ const Market = function() {
     </View>
   ), []);
 
-  return (
-    <ScrollView
+  const renderListMarket = useMemo(() => (
+    <FlatList
+      data={cryptoList}
+      renderItem={renderItem}
+      key={item => item.id}
+      keyExtractor={item => item.id}
+      onEndReached={getCryptoList}
+      refreshing={refreshing}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      ListEmptyComponent={renderNoData}
+    />
+  ), [cryptoList])
+
+  console.log(cryptoList)
+
+  return (
+    <SafeAreaView
       style={styles.container}
     >
-      {
-        cryptoList.length > 0 ?
-          cryptoList?.map(item => renderItem(item)) :
-          renderNoData
-      }
-    </ScrollView>
+      {renderListMarket}
+    </SafeAreaView>
   )
 };
 

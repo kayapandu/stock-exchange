@@ -21,7 +21,7 @@ export default (state = initialState, action = { type: 'default' }) => {
       return {
         ...state,
         loading: action.payload.loading,
-        cryptoList: action.payload,
+        cryptoList: [...cryptoList, ...action.payload],
       }
     case GET_CURRENT_CRYPTO :
       return {
